@@ -12,14 +12,19 @@ teal = '#58b6c2'
 orange = '#d19a66'
 
 # =====================================================
+p = 40 # size of a cell in pixels
+w = 50 # grid size in cells
+h = 26 # grid height in cells
+delay = 30 # artificial delay in milliseconds
+applecol = red # color of apple
+snakecol = green # color of snake
+# =====================================================
 
-w = 50
-h = 26
-p = 40
-delay = 30
-applecol = red
-snakecol = green
-
+# =====================================================
+# arrows / WASD to move
+# SPACE to pause
+# R to restart
+# ESC to exit
 # =====================================================
 
 def generate_apple(s,a,b):
@@ -77,10 +82,10 @@ while True:
 
     if not dead and not paused:
         # change direction on input
-        if keys[pygame.K_RIGHT] and d != 'l': d = 'r'
-        elif keys[pygame.K_LEFT] and d != 'r': d = 'l'
-        elif keys[pygame.K_UP] and d != 'd': d = 'u'
-        elif keys[pygame.K_DOWN] and d != 'u': d = 'd'
+        if (keys[pygame.K_RIGHT]) and d != 'l': d = 'r'
+        elif (keys[pygame.K_LEFT]) and d != 'r': d = 'l'
+        elif (keys[pygame.K_UP]) and d != 'd': d = 'u'
+        elif (keys[pygame.K_DOWN]) and d != 'u': d = 'd'
 
         # the snake's head is the last index
         head = snake[-1]
