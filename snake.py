@@ -82,10 +82,10 @@ while True:
 
     if not dead and not paused:
         # change direction on input
-        if (keys[pygame.K_RIGHT]) and d != 'l': d = 'r'
-        elif (keys[pygame.K_LEFT]) and d != 'r': d = 'l'
-        elif (keys[pygame.K_UP]) and d != 'd': d = 'u'
-        elif (keys[pygame.K_DOWN]) and d != 'u': d = 'd'
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and d != 'l': d = 'r'
+        elif (keys[pygame.K_LEFT] or keys[pygame.K_a]) and d != 'r': d = 'l'
+        elif (keys[pygame.K_UP] or keys[pygame.K_w]) and d != 'd': d = 'u'
+        elif (keys[pygame.K_DOWN] or keys[pygame.K_s]) and d != 'u': d = 'd'
 
         # the snake's head is the last index
         head = snake[-1]
