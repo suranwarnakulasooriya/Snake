@@ -1,6 +1,7 @@
 import pygame
 from random import randint
 from PIL import ImageColor # to convert hex to rgb
+from os import path
 
 # colors
 red = '#e06c75'
@@ -46,8 +47,9 @@ score = 0
 apple = generate_apple(snake,w,h)
 dead = False
 paused = False
+dir = path.dirname(path.realpath(__file__))
 
-with open('./snakeHigh.txt','r') as f:
+with open(f'{dir}/snakeHigh.txt','r') as f:
     highscore = f.read()
     f.close()
 highscore.strip()
@@ -56,7 +58,7 @@ highscore = int(highscore)
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((sw,sh))
-font = pygame.font.Font('./font.ttf',p)
+font = pygame.font.Font(f'{dir}/font.ttf',p)
 
 # restart
 rs = font.render('press R to restart',True,(rgb[1]))
@@ -69,13 +71,13 @@ while True:
 
     for event in pygame.event.get(): # close window on quit
         if event.type == pygame.QUIT:
-            with open('./snakeHigh.txt','w') as f:
+            with open(f'{dir}/snakeHigh.txt','w') as f:
                 f.write(str(highscore))
                 f.close(); exit()
 
     keys = pygame.key.get_pressed() # quit on esc and pause on space
     if keys[pygame.K_ESCAPE]:
-        with open('./snakeHigh.txt','w') as f:
+        with open(f'{dir}/snakeHigh.txt','w') as f:
                 f.write(str(highscore))
                 f.close(); exit()
     if keys[pygame.K_SPACE]: paused = not paused
