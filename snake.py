@@ -59,6 +59,7 @@ pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((sw,sh))
 font = pygame.font.Font(f'{dir}/font.ttf',p)
+pygame.display.set_caption('Snake')
 
 # restart
 rs = font.render('press R to restart',True,(rgb[1]))
