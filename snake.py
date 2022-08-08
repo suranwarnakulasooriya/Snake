@@ -58,8 +58,8 @@ highscore = int(highscore)
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((sw,sh))
-font = pygame.font.Font(f'{dir}/font.ttf',p)
 pygame.display.set_caption('Snake')
+font = pygame.font.Font(f'{dir}/font.ttf',p)
 
 # restart
 rs = font.render('press R to restart',True,(rgb[1]))
@@ -108,13 +108,14 @@ while True:
             else: snake.append((head[0]+1,head[1]))
         
         # if the snake has reached the apple, generate a new apple and let the snake grow
-        if snake[-1] == apple: apple = generate_apple(snake, w, h); score += 1
+        if snake[-1] == apple:
+            apple = generate_apple(snake, w, h); score += 1
+            highscore = max(highscore,score) # adjust high score
         else: snake.pop(0) # otherwise, cut the snake's tail so it stays the same size
 
         # kill if snake's head intersects itself
         if snake.index(snake[-1]) != len(snake)-1: dead = True
 
-        highscore = max(highscore,score) # adjust high score
     
     elif dead: # restard on R key
         screen.blit(rs,rrs)
