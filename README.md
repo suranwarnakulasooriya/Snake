@@ -18,3 +18,4 @@ The screen is a grid with a certain width, height, and cell size. These values d
 19 applecol = red # color of apple
 20 snakecol = green # color of snake
 ```
+Make sure that `snakeHigh.txt` and `font.ttf` are in the same directory as `snake.py`.
