@@ -19,3 +19,6 @@ The screen is a grid with a certain width, height, and cell size. These values d
 20 snakecol = green # color of snake
 ```
 Make sure that `snakeHigh.txt` and `font.ttf` are in the same directory as `snake.py`.
+
+![snake](https://user-images.githubusercontent.com/68828123/184267282-6da72a58-bd68-4cb5-a051-6fd864e3a6f3.gif)
+
