@@ -1,7 +1,7 @@
 import pygame
 from random import randint
-from PIL import ImageColor # to convert hex to rgb
 from os import path
+from datetime import datetime
 
 # colors
 red = '#e06c75'
@@ -14,11 +14,11 @@ orange = '#d19a66'
 
 # =====================================================
 p = 40 # size of a cell in pixels
-w = 50 # grid size in cells
-h = 26 # grid height in cells
-delay = 30 # artificial delay in milliseconds
+w = 25 # grid size in cells
+h = 25 # grid height in cells
 applecol = red # color of apple
 snakecol = green # color of snake
+target_fps = 20
 # =====================================================
 
 # =====================================================
@@ -30,17 +30,17 @@ snakecol = green # color of snake
 
 def generate_apple(s,a,b):
     x,y = randint(0,a-1),randint(0,b-1)
-    while (y,x) in s:
-        x,y = randint(0,a-1),randint(0,b-1)
+    while (y,x) in s: x,y = randint(0,a-1),randint(0,b-1)
     return (y,x)
 
-w = max(30,min(100,w))
+w = max(25,min(100,w))
 h = max(25,min(100,h))
 sw = w*p
-sh = h*p+4*p
+sh = h*p
+target_frametime = 1/target_fps # target time per frame in seconds
 
 grid = [[0]*w for _ in range(h)]
-rgb = {0:'#282c34',1:applecol,2:ImageColor.getcolor(snakecol,'RGB')} # 0 = bg, 1 = apple, 2 = snake
+rgb = {0:'#282c34',1:applecol,2:snakecol} # 0 = bg, 1 = apple, 2 = snake
 snake = [(0,0),(0,1),(0,2),(0,3)] # the snake is a list of coordinates
 d = 'r' # direction of the snake
 score = 0
@@ -58,16 +58,10 @@ highscore = int(highscore)
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((sw,sh))
-pygame.display.set_caption('Snake')
-font = pygame.font.Font(f'{dir}/font.ttf',p)
-
-# restart
-rs = font.render('press R to restart',True,(rgb[1]))
-rrs = rs.get_rect()
-rrs.topleft = (sw//2-9*p,sh-p-p//2)
+restart = ""
 
 while True:
-    pygame.time.delay(delay)
+    dt1 = datetime.now()
     screen.fill(0x20242d)
 
     for event in pygame.event.get(): # close window on quit
@@ -81,7 +75,7 @@ while True:
         with open(f'{dir}/snakeHigh.txt','w') as f:
                 f.write(str(highscore))
                 f.close(); exit()
-    if keys[pygame.K_SPACE]: paused = not paused
+    if keys[pygame.K_SPACE]: paused ^= 1; pygame.time.delay(int(target_frametime/1e3))
 
     if not dead and not paused:
         # change direction on input
@@ -116,34 +110,17 @@ while True:
         # kill if snake's head intersects itself
         if snake.index(snake[-1]) != len(snake)-1: dead = True
 
-    
     elif dead: # restard on R key
-        screen.blit(rs,rrs)
+        restart = "| PRESS R TO RESTART"
         if keys[pygame.K_r]:
             snake = [(0,0),(0,1),(0,2),(0,3)]
             apple = generate_apple(snake, w, h)
-            d = 'r'
-            paused = False
-            dead = False
-            score = 0
-
-    # score
-    sc = font.render(f'score:{score:04}',True,rgb[1])
-    rsc = sc.get_rect()
-    rsc.topleft = (p,p//2)
-    # high score
-    hs = font.render(f'high score:{highscore:04}',True,rgb[1])
-    rhs = hs.get_rect()
-    rhs.topleft = (sw-16*p,p//2)
-
-    # display score and high score
-    screen.blit(sc,rsc)
-    screen.blit(hs,rhs)
+            d = 'r'; paused = False; dead = False; score = 0
+    else: restart = ""
 
     # snake 
     nxt = [[0]*w for _ in range(h)]
-    for block in snake:
-        nxt[block[0]][block[1]] = 2
+    for block in snake: nxt[block[0]][block[1]] = 2
     
     # apple
     nxt[apple[0]][apple[1]] = 1
@@ -151,7 +128,12 @@ while True:
     # draw grid
     grid = nxt
     for r in range(h):
-        for c in range(w):
-            pygame.draw.rect(screen,rgb[grid[r][c]],(c*p,r*p+2*p,p,p))
+        for c in range(w): pygame.draw.rect(screen,rgb[grid[r][c]],(c*p,r*p,p,p))
 
+    timeD = (datetime.now()-dt1).microseconds/1e6 # frame time in seconds
+    if timeD < target_frametime: pygame.time.delay(int((target_frametime-timeD)*1e3)) # adjust FPS
+
+    dt2 = datetime.now()
+
+    pygame.display.set_caption(f'SNAKE | SCORE {score} | HIGH SCORE {highscore} | {round(1/(dt2-dt1).microseconds*1e6,1)} FPS {restart}')
     pygame.display.update()
