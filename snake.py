@@ -13,12 +13,12 @@ teal = '#58b6c2'
 orange = '#d19a66'
 
 # =====================================================
-p = 40 # size of a cell in pixels
+p = 30 # size of a cell in pixels
 w = 25 # grid size in cells
 h = 25 # grid height in cells
 applecol = red # color of apple
 snakecol = green # color of snake
-target_fps = 20
+target_fps = 15
 # =====================================================
 
 # =====================================================
@@ -115,7 +115,7 @@ while True:
         if keys[pygame.K_r]:
             snake = [(0,0),(0,1),(0,2),(0,3)]
             apple = generate_apple(snake, w, h)
-            d = 'r'; paused = False; dead = False; score = 0
+            d = 'r'; paused = False; dead = False; score = 0; restart = ""
     else: restart = ""
 
     # snake 
@@ -128,7 +128,8 @@ while True:
     # draw grid
     grid = nxt
     for r in range(h):
-        for c in range(w): pygame.draw.rect(screen,rgb[grid[r][c]],(c*p,r*p,p,p))
+        for c in range(w):
+            if grid[r][c]: pygame.draw.rect(screen,rgb[grid[r][c]],(c*p,r*p,p,p))
 
     timeD = (datetime.now()-dt1).microseconds/1e6 # frame time in seconds
     if timeD < target_frametime: pygame.time.delay(int((target_frametime-timeD)*1e3)) # adjust FPS
