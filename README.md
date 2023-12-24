@@ -1,5 +1,5 @@
 # Snake
-A recreation of the classic snake game in Python.
+A terminal-based recreation of the classic snake game in Python.
 
 ## Dependencies
 Curses is the only dependency for this project, to install it, do:
