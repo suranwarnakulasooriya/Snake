@@ -1,140 +1,174 @@
-import pygame
-from random import randint
-from os import path
-from datetime import datetime
+# DEPENDENCIES ====================================================================================
 
-# colors
-red = '#e06c75'
-green = '#98c379'
-yellow = '#e5c07b'
-blue = '#61afef'
-purple = '#c678dd'
-teal = '#58b6c2'
-orange = '#d19a66'
+import curses # for i/o
+from random import randint # to generate random apple position
+from os import path # to read and write high score
+from time import sleep # to manage frame rate
+from datetime import datetime # ^
 
-# =====================================================
-p = 30 # size of a cell in pixels
-w = 25 # grid size in cells
-h = 25 # grid height in cells
-applecol = red # color of apple
-snakecol = green # color of snake
-target_fps = 15
-# =====================================================
+# CONFIGURATION ===================================================================================
 
-# =====================================================
-# arrows / WASD to move
-# SPACE to pause
-# R to restart
-# ESC to exit
-# =====================================================
+w,h = 20,20 # grid width and height
+target_fps = 10 # target frames per second
 
-def generate_apple(s,a,b):
-    x,y = randint(0,a-1),randint(0,b-1)
-    while (y,x) in s: x,y = randint(0,a-1),randint(0,b-1)
+# FUNCTIONS =======================================================================================
+
+def generate_apple(s:list,a:int,b:int) -> (int,int): 
+    x,y = randint(0,a-1),randint(0,b-1) # random apple position
+    while (y,x) in s: x,y = randint(0,a-1),randint(0,b-1) # regenerate apple if it intersects snake
     return (y,x)
 
-w = max(25,min(100,w))
-h = max(25,min(100,h))
-sw = w*p
-sh = h*p
-target_frametime = 1/target_fps # target time per frame in seconds
+def blit(scr,cell,r,c) -> None:
+    if cell: # draw an apple or a snake block if the cell is filled
+        if (r,c) == apple: scr.addstr('',curses.color_pair(2))
+        else: scr.addstr('█',curses.color_pair(3))
+    else: scr.addstr(' ') # otherwise: space
 
-grid = [[0]*w for _ in range(h)]
-rgb = {0:'#282c34',1:applecol,2:snakecol} # 0 = bg, 1 = apple, 2 = snake
-snake = [(0,0),(0,1),(0,2),(0,3)] # the snake is a list of coordinates
-d = 'r' # direction of the snake
-score = 0
-apple = generate_apple(snake,w,h)
-dead = False
-paused = False
-dir = path.dirname(path.realpath(__file__))
+def close(score:int,highscore:int,stdscr:curses.window) -> None:
+    with open(f'{dir}/snakeHigh.txt','w') as f: f.write(str(highscore)); f.close() # save highscore
+    stdscr.keypad(0); curses.nocbreak(); curses.endwin() # end curses
+    exit(f'GAME ENDED | SCORE: {score}') # end python with message
 
-with open(f'{dir}/snakeHigh.txt','r') as f:
-    highscore = f.read()
-    f.close()
-highscore.strip()
-highscore = int(highscore)
+# SETUP  ==========================================================================================
 
-pygame.init()
-pygame.font.init()
-screen = pygame.display.set_mode((sw,sh))
-restart = ""
+if __name__ == '__main__': # grid setup
+    w = max(10,min(100,w)); h = max(10,min(100,h)) # clamp grid dimensions
+    grid = [[0]*w for _ in range(h)] # empty grid
 
-while True:
-    dt1 = datetime.now()
-    screen.fill(0x20242d)
+    # game setup
+    snake = [(0,0),(0,1),(0,2),(0,3)] # snake is a list of coords, starts 4 cells long
+    d = 'r' # direction of snake
+    score = 0; gameover = False; paused = False
+    apple = generate_apple(snake,w,h)
 
-    for event in pygame.event.get(): # close window on quit
-        if event.type == pygame.QUIT:
-            with open(f'{dir}/snakeHigh.txt','w') as f:
-                f.write(str(highscore))
-                f.close(); exit()
+    # read high score
+    dir = path.dirname(path.realpath(__file__))
+    with open(f'{dir}/snakeHigh.txt','r') as f: highscore = f.read(); f.close()
+    highscore.strip()
+    highscore = int(highscore)
 
-    keys = pygame.key.get_pressed() # quit on esc and pause on space
-    if keys[pygame.K_ESCAPE]:
-        with open(f'{dir}/snakeHigh.txt','w') as f:
-                f.write(str(highscore))
-                f.close(); exit()
-    if keys[pygame.K_SPACE]: paused ^= 1; pygame.time.delay(int(target_frametime/1e3))
+    # i/o setup
+    stdscr = curses.initscr()
+    curses.start_color(); curses.use_default_colors()
+    curses.cbreak(); curses.noecho()
+    stdscr.nodelay(True) # make curses.getch() nonblocking
+    stdscr.keypad(True) # accept keypad escape sequences
+    target_frametime = 1/target_fps # target time per frame in seconds
+   
+    for i in range(0,8): # generate ansi colors, i values are used to draw red/green
+        try: curses.init_pair(i+1,i,-1)
+        except curses.ERR: pass
 
-    if not dead and not paused:
-        # change direction on input
-        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and d != 'l': d = 'r'
-        elif (keys[pygame.K_LEFT] or keys[pygame.K_a]) and d != 'r': d = 'l'
-        elif (keys[pygame.K_UP] or keys[pygame.K_w]) and d != 'd': d = 'u'
-        elif (keys[pygame.K_DOWN] or keys[pygame.K_s]) and d != 'u': d = 'd'
+# EVENT LOOP  =====================================================================================
 
-        # the snake's head is the last index
-        head = snake[-1]
-
-        # increase length of snake in current direction
-        if d == 'r':
-            if head[1] == w-1: snake.append((head[0],0))
-            else: snake.append((head[0],head[1]+1))
-        elif d == 'l':
-            if head[1] == 0: snake.append((head[0],w-1))
-            else: snake.append((head[0],head[1]-1))
-        elif d == 'u':
-            if head[0] == 0: snake.append((h-1,head[1]))
-            else: snake.append((head[0]-1,head[1]))
-        elif d == 'd':
-            if head[0] == h-1: snake.append((0,head[1]))
-            else: snake.append((head[0]+1,head[1]))
+while __name__ == '__main__':
+    try:
         
-        # if the snake has reached the apple, generate a new apple and let the snake grow
-        if snake[-1] == apple:
-            apple = generate_apple(snake, w, h); score += 1
-            highscore = max(highscore,score) # adjust high score
-        else: snake.pop(0) # otherwise, cut the snake's tail so it stays the same size
+        # INPUT  ==================================================================================
 
-        # kill if snake's head intersects itself
-        if snake.index(snake[-1]) != len(snake)-1: dead = True
+        dt1 = datetime.now() # get current time
+        input_char = stdscr.getch(); stdscr.erase() # get input and clear screen
 
-    elif dead: # restard on R key
-        restart = "| PRESS R TO RESTART"
-        if keys[pygame.K_r]:
-            snake = [(0,0),(0,1),(0,2),(0,3)]
-            apple = generate_apple(snake, w, h)
-            d = 'r'; paused = False; dead = False; score = 0; restart = ""
-    else: restart = ""
+        if input_char == ord('q'): close(score,highscore,stdscr) # quit on q
+        elif input_char == ord(' '): paused ^= 1 # toggle pause on space
 
-    # snake 
-    nxt = [[0]*w for _ in range(h)]
-    for block in snake: nxt[block[0]][block[1]] = 2
-    
-    # apple
-    nxt[apple[0]][apple[1]] = 1
-    
-    # draw grid
-    grid = nxt
-    for r in range(h):
-        for c in range(w):
-            if grid[r][c]: pygame.draw.rect(screen,rgb[grid[r][c]],(c*p,r*p,p,p))
+        if not gameover and not paused: # change direction on arrows if game is active
+            # snake will not immediately go the opposite direction since it would immediately die
+            if (input_char == curses.KEY_RIGHT) and d != 'l': d = 'r'
+            elif (input_char == curses.KEY_LEFT) and d != 'r': d = 'l'
+            elif (input_char == curses.KEY_UP) and d != 'd': d = 'u'
+            elif (input_char == curses.KEY_DOWN) and d != 'u': d = 'd'
+            head = snake[-1] # the snake's head is the last index
 
-    timeD = (datetime.now()-dt1).microseconds/1e6 # frame time in seconds
-    if timeD < target_frametime: pygame.time.delay(int((target_frametime-timeD)*1e3)) # adjust FPS
+        # GAME LOGIC  =============================================================================
 
-    dt2 = datetime.now()
+            # increase length of snake in current direction
+            if d == 'r':
+                if head[1] == w-1: snake.append((head[0],0))
+                else: snake.append((head[0],head[1]+1))
+            elif d == 'l':
+                if head[1] == 0: snake.append((head[0],w-1))
+                else: snake.append((head[0],head[1]-1))
+            elif d == 'u':
+                if head[0] == 0: snake.append((h-1,head[1]))
+                else: snake.append((head[0]-1,head[1]))
+            else:
+                if head[0] == h-1: snake.append((0,head[1]))
+                else: snake.append((head[0]+1,head[1]))
+            
+            # if the snake has reached the apple, generate a new apple and let the snake grow
+            if snake[-1] == apple:
+                apple = generate_apple(snake, w, h); score += 1
+                highscore = max(highscore,score) # adjust high score
+            else: snake.pop(0) # otherwise, cut the snake's tail so it stays the same size
 
-    pygame.display.set_caption(f'SNAKE | SCORE {score} | HIGH SCORE {highscore} | {round(1/(dt2-dt1).microseconds*1e6,1)} FPS {restart}')
-    pygame.display.update()
+            if len(snake) != len(list(set(snake))): gameover = True # kill if snake intersects self
+
+        elif gameover: # restart on r
+            if input_char == ord('r'):
+                snake = [(0,0),(0,1),(0,2),(0,3)]
+                apple = generate_apple(snake, w, h)
+                d = 'r'; paused = False; gameover = False; score = 0
+
+        nxt = [[0]*w for _ in range(h)] # next grid starts empty
+        for block in snake: nxt[block[0]][block[1]] = 2 # add snake to next grid
+        nxt[apple[0]][apple[1]] = 1 # add apple to next grid
+        grid = nxt # update grid
+        
+        # OUTPUT  =================================================================================
+
+        # header shoes restart prompt, "paused", or nothing depending on game state
+        if gameover:
+            stdscr.addstr('╭'+ '─'*((w+8-12)//2))
+            stdscr.addstr('R TO RESTART',curses.color_pair(3))
+            stdscr.addstr('─'*((w+8-12)//2+w%2) + '╮\n')
+        elif paused:
+            stdscr.addstr('╭'+ '─'*((w+8-6)//2))
+            stdscr.addstr('PAUSED',curses.color_pair(3))
+            stdscr.addstr('─'*((w+8-6)//2+w%2) + '╮\n')
+        else: stdscr.addstr('╭'+ '─'*(w+8) + '╮\n')
+
+        # subheader
+        stdscr.addstr('│╭' + '─'*((w-5)//2))
+        stdscr.addstr('SNAKE',curses.color_pair(3))
+        stdscr.addstr('─'*(((w-5)//2)+((w%2)==0)) + '╮╭')
+        stdscr.addstr('SCOR',curses.color_pair(3))
+        stdscr.addstr('╮│\n')
+
+        # main body
+        for r in range(h):
+            stdscr.addstr('││') 
+            for c in range(w): blit(stdscr,grid[r][c],r,c) # snake and apple
+
+            # score and highscore
+            stdscr.addstr('│')
+            if r == 0:
+                stdscr.addstr('│')
+                stdscr.addstr(f'{score:04}',curses.color_pair(2))
+                stdscr.addstr('│')
+            elif r == 2:
+                stdscr.addstr('╭')
+                stdscr.addstr('HIGH',curses.color_pair(3))
+                stdscr.addstr('╮')
+            elif r == 3:
+                stdscr.addstr('│')
+                stdscr.addstr(f'{highscore:04}',curses.color_pair(2))
+                stdscr.addstr('│')
+
+            # empty box to fill up height
+            elif r == 5: stdscr.addstr('╭────╮')
+            elif r > 5 and r != h: stdscr.addstr('│    │')
+
+            # sides and bottoms of sidebar panels
+            elif r in [8,11]: stdscr.addstr('│    │')
+            elif r in [1,4]: stdscr.addstr('╰────╯')
+
+            stdscr.addstr('│\n') # next line
+
+        # bottom of panels
+        stdscr.addstr('│╰'+'─'*w+'╯╰────╯│\n'); stdscr.addstr('╰'+ '─'*(w+8) + '╯\n')
+
+        sleep(max(0,target_frametime-(datetime.now()-dt1).microseconds/1e6)) # maintain frame rate
+        stdscr.refresh()
+
+    except KeyboardInterrupt: close(score,highscore,stdscr) # quit on ^C
