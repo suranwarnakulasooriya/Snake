@@ -20,6 +20,7 @@ Make sure that `snakeHigh.txt` is in the same directory as `snake.py`.
 |q|exit|
 |space|pause|
 |r|restart|
+|c|toggle colors|
 |left|move left|
 |right|move right|
 |up|move up|
