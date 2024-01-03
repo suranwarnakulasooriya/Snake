@@ -69,7 +69,7 @@ while __name__ == '__main__':
         if input_char == curses.KEY_RESIZE: # reset game if window is resized
             f,w,h = init_dimens(stdscr); # get new dimens
             snake = [(0,0),(0,1),(0,2),(0,3)]; apple = generate_apple(snake, w, h)
-            d = 'r'; paused = True; gameover = False; score = 0
+            d = 'r'; arrow = '→'; paused = True; gameover = False; score = 0
 
         elif input_char == ord('q'): close(score,highscore,stdscr) # quit on q
         elif input_char == ord(' '): paused ^= 1 # toggle pause on space
@@ -78,7 +78,7 @@ while __name__ == '__main__':
         if gameover: # restart on r
             if input_char == ord('r'):
                 snake = [(0,0),(0,1),(0,2),(0,3)]; apple = generate_apple(snake, w, h)
-                d = 'r'; paused = False; gameover = False; score = 0
+                d = 'r'; arrow = '→'; paused = False; gameover = False; score = 0
 
         elif not gameover and not paused and f: # change direction on arrows if game is active
             # snake will not immediately go the opposite direction since it would immediately die
@@ -92,15 +92,19 @@ while __name__ == '__main__':
 
             # increase length of snake in current direction
             if d == 'r':
+                arrow = '→'
                 if head[1] == w-1: snake.append((head[0],0))
                 else: snake.append((head[0],head[1]+1))
             elif d == 'l':
+                arrow = '←'
                 if head[1] == 0: snake.append((head[0],w-1))
                 else: snake.append((head[0],head[1]-1))
             elif d == 'u':
+                arrow = '↑'
                 if head[0] == 0: snake.append((h-1,head[1]))
                 else: snake.append((head[0]-1,head[1]))
             else:
+                arrow = '↓'
                 if head[0] == h-1: snake.append((0,head[1]))
                 else: snake.append((head[0]+1,head[1]))
             
@@ -128,8 +132,11 @@ while __name__ == '__main__':
             stdscr.addstr(0,1,f' SCORE: {score} ') # score text
             stdscr.addstr(h+1,1,f' HIGH SCORE: {highscore} ') # high score text
             dims = f' {w}x{h} '; stdscr.addstr(h+1,w+1-len(dims),dims) # show dimens
-            if gameover: stdscr.addstr(h//2+1,(w+2)//2-7,' R TO RESTART ') # restart text
-            elif paused: stdscr.addstr(h//2+1,(w+2)//2-4,' PAUSED ') # paused text
+            if gameover: stdscr.addstr(0,w-13,' R TO RESTART ') # restart text
+            elif paused:
+                stdscr.addstr(snake[-1][0]+1,snake[-1][1]+1,arrow, # draw arrow to show snake...
+                curses.color_pair(color_map[tui_color][1])) # ...direction when paused
+                stdscr.addstr(0,w-7,' PAUSED ') # paused text
         else: stdscr.addstr('Window is not big enough (need at least 25x25).') # error text
 
         sleep(max(0,target_frametime-(datetime.now()-dt1).microseconds/1e6)) # maintain frame rate
