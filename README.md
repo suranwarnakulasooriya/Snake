@@ -10,7 +10,7 @@ pip install curses
 ## Configuration
 The dimensions of the game are automatically set to the dimensions of the terminal window. Resize the terminal to change those dimensions. The target frame rate cam be changed in:
 ```
-11 target_fps = 10 # target frames per second
+11 target_fps = 20 # target frames per second
 ```
 Make sure that `snakeHigh.txt` is in the same directory as `snake.py`.
 
